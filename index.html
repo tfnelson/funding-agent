@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Academic Funding Agent</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/dist/tabler-icons.min.css" />
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-secondary: #f5f5f4;
+      --bg-info: #eff6ff;
+      --bg-success: #f0fdf4;
+      --bg-warning: #fffbeb;
+      --bg-danger: #fef2f2;
+      --text: #1a1a1a;
+      --text-secondary: #6b7280;
+      --text-info: #1d4ed8;
+      --text-success: #166534;
+      --text-warning: #92400e;
+      --text-danger: #991b1b;
+      --border: rgba(0,0,0,0.1);
+      --border-md: rgba(0,0,0,0.18);
+      --border-info: #bfdbfe;
+      --border-success: #bbf7d0;
+      --border-danger: #fecaca;
+      --radius: 8px;
+      --radius-lg: 12px;
+      --radius-pill: 999px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1c1e;
+        --bg-secondary: #2c2c2e;
+        --bg-info: #1e3a5f;
+        --bg-success: #14532d;
+        --bg-warning: #451a03;
+        --bg-danger: #450a0a;
+        --text: #f5f5f5;
+        --text-secondary: #9ca3af;
+        --text-info: #93c5fd;
+        --text-success: #86efac;
+        --text-warning: #fcd34d;
+        --text-danger: #fca5a5;
+        --border: rgba(255,255,255,0.1);
+        --border-md: rgba(255,255,255,0.18);
+        --border-info: #1e40af;
+        --border-success: #166534;
+        --border-danger: #991b1b;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg-secondary); color: var(--text); min-height: 100vh; }
+
+    /* API KEY SETUP SCREEN */
+    #setup { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+    .setup-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 2rem; max-width: 480px; width: 100%; }
+    .setup-card h1 { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+    .setup-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.25rem; }
+    .setup-card a { color: var(--text-info); }
+    .key-row { display: flex; gap: 8px; }
+    .key-row input { flex: 1; font-size: 14px; padding: 8px 12px; border: 0.5px solid var(--border-md); border-radius: var(--radius); background: var(--bg); color: var(--text); }
+    .key-row button { padding: 8px 16px; border-radius: var(--radius); border: 0.5px solid var(--border-md); background: var(--text); color: var(--bg); font-size: 14px; cursor: pointer; white-space: nowrap; }
+    .setup-note { font-size: 12px; color: var(--text-secondary); margin-top: 10px; }
+    .setup-error { font-size: 13px; color: var(--text-danger); margin-top: 8px; display: none; }
+
+    /* MAIN APP */
+    #app { display: none; max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .app-header h1 { font-size: 20px; font-weight: 600; }
+    .reset-key { font-size: 12px; color: var(--text-secondary); background: none; border: 0.5px solid var(--border); border-radius: var(--radius); padding: 4px 10px; cursor: pointer; }
+    .tabs { display: flex; border-bottom: 0.5px solid var(--border); margin-bottom: 1.5rem; }
+    .tab { font-size: 14px; padding: 8px 16px; border: none; background: none; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; font-family: inherit; }
+    .tab.active { color: var(--text); border-bottom-color: var(--text); font-weight: 500; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* PROFILE BAR */
+    .profile-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+    .badge { font-size: 12px; padding: 4px 10px; border-radius: var(--radius); background: var(--bg-secondary); color: var(--text-secondary); border: 0.5px solid var(--border); }
+
+    /* SEARCH */
+    .search-row { display: flex; gap: 8px; margin-bottom: 1rem; }
+    .search-row input { flex: 1; font-size: 14px; padding: 8px 12px; border: 0.5px solid var(--border-md); border-radius: var(--radius); background: var(--bg); color: var(--text); }
+    .search-row input:focus { outline: none; border-color: var(--text-info); }
+    .search-row button { padding: 8px 18px; border-radius: var(--radius); border: 0.5px solid var(--border-md); background: var(--text); color: var(--bg); font-size: 14px; cursor: pointer; white-space: nowrap; font-family: inherit; }
+    .search-row button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .filters { display: flex; gap: 8px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .filter-btn { font-size: 13px; padding: 5px 12px; border-radius: var(--radius-pill); border: 0.5px solid var(--border-md); background: transparent; color: var(--text-secondary); cursor: pointer; font-family: inherit; }
+    .filter-btn.active { background: var(--bg-info); color: var(--text-info); border-color: var(--border-info); }
+    .status-line { font-size: 13px; color: var(--text-secondary); margin-bottom: 1rem; min-height: 18px; }
+    .results { display: flex; flex-direction: column; gap: 10px; }
+    .grant-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; }
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
+    .grant-name { font-size: 15px; font-weight: 500; color: var(--text); line-height: 1.4; }
+    .grant-name a { color: var(--text-info); text-decoration: none; }
+    .grant-name a:hover { text-decoration: underline; }
+    .card-badges { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
+    .type-badge { font-size: 11px; padding: 3px 8px; border-radius: var(--radius); white-space: nowrap; }
+    .type-fellowship { background: var(--bg-success); color: var(--text-success); }
+    .type-project { background: var(--bg-info); color: var(--text-info); }
+    .type-both { background: var(--bg-warning); color: var(--text-warning); }
+    .save-btn { font-size: 12px; padding: 3px 10px; border-radius: var(--radius); cursor: pointer; border: 0.5px solid var(--border-md); background: var(--bg); color: var(--text-secondary); font-family: inherit; }
+    .save-btn.saved { background: var(--bg-success); color: var(--text-success); border-color: var(--border-success); }
+    .grant-meta { display: flex; gap: 14px; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; flex-wrap: wrap; align-items: center; }
+    .grant-meta span { display: flex; align-items: center; gap: 3px; }
+    .grant-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+
+    /* TRACKER */
+    .stats-row { display: flex; gap: 10px; margin-bottom: 1.25rem; }
+    .stat-card { flex: 1; background: var(--bg-secondary); border-radius: var(--radius); padding: 10px 12px; }
+    .stat-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 2px; }
+    .stat-value { font-size: 22px; font-weight: 600; color: var(--text); }
+    .tracker-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; gap: 8px; flex-wrap: wrap; }
+    .tracker-toolbar h3 { font-size: 15px; font-weight: 500; }
+    .export-btn { font-size: 13px; padding: 6px 14px; border-radius: var(--radius); border: 0.5px solid var(--border-md); background: var(--bg); color: var(--text); cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 6px; }
+    .export-btn:hover { background: var(--bg-secondary); }
+    .tracker-empty { text-align: center; padding: 3rem 1rem; color: var(--text-secondary); font-size: 14px; border: 0.5px dashed var(--border-md); border-radius: var(--radius-lg); }
+    .tracker-empty i { font-size: 32px; display: block; margin-bottom: 8px; opacity: 0.4; }
+    .tracker-list { display: flex; flex-direction: column; gap: 10px; }
+    .tracker-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; }
+    .tracker-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+    .tracker-name { font-size: 14px; font-weight: 500; color: var(--text); }
+    .tracker-name a { color: var(--text-info); text-decoration: none; }
+    .tracker-name a:hover { text-decoration: underline; }
+    .tracker-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+    .status-select { font-size: 12px; padding: 4px 8px; border-radius: var(--radius); border: 0.5px solid var(--border-md); background: var(--bg); color: var(--text); cursor: pointer; font-family: inherit; }
+    .remove-btn { font-size: 13px; padding: 4px 8px; border-radius: var(--radius); border: 0.5px solid var(--border-danger); background: none; color: var(--text-danger); cursor: pointer; font-family: inherit; }
+    .tracker-meta { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+    .notes-input { width: 100%; font-size: 13px; padding: 6px 10px; border-radius: var(--radius); border: 0.5px solid var(--border); background: var(--bg-secondary); color: var(--text); resize: vertical; line-height: 1.5; font-family: inherit; min-height: 48px; }
+    .notes-input:focus { outline: none; border-color: var(--border-md); }
+
+    /* LOADING */
+    .loading-dots { display: inline-flex; gap: 4px; align-items: center; }
+    .loading-dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--text-secondary); animation: bounce 1.2s infinite; }
+    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
+
+    /* TOAST */
+    .toast { position: fixed; bottom: 20px; right: 20px; background: var(--bg); border: 0.5px solid var(--border-md); border-radius: var(--radius); padding: 10px 16px; font-size: 13px; color: var(--text); opacity: 0; transform: translateY(8px); transition: all 0.2s; pointer-events: none; z-index: 999; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- API KEY SETUP -->
+<div id="setup">
+  <div class="setup-card">
+    <h1>🔬 Academic Funding Agent</h1>
+    <p>This tool searches the web for grants, fellowships, and funding schemes tailored to your profile as a postdoc in the natural sciences.</p>
+    <p>To get started, enter your <a href="https://console.anthropic.com/settings/keys" target="_blank">Anthropic API key</a>. It's stored only in your browser — never sent anywhere except Anthropic's API.</p>
+    <div class="key-row">
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-…" />
+      <button onclick="saveKey()">Continue →</button>
+    </div>
+    <p class="setup-note">Don't have a key? <a href="https://console.anthropic.com" target="_blank">Sign up at console.anthropic.com</a> — usage is pay-per-use and very cheap for this tool (~$0.01–0.05 per search).</p>
+    <p class="setup-error" id="setupError">Please enter a valid API key (starts with sk-ant-).</p>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="app-header">
+    <h1><i class="ti ti-search" style="font-size:20px;vertical-align:-3px;margin-right:6px" aria-hidden="true"></i>Funding Agent</h1>
+    <button class="reset-key" onclick="resetKey()"><i class="ti ti-key" style="font-size:13px;vertical-align:-1px;margin-right:4px" aria-hidden="true"></i>Change API key</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('search')"><i class="ti ti-search" style="font-size:14px;vertical-align:-1px;margin-right:5px" aria-hidden="true"></i>Search</button>
+    <button class="tab" onclick="switchTab('tracker')"><i class="ti ti-bookmark" style="font-size:14px;vertical-align:-1px;margin-right:5px" aria-hidden="true"></i>Tracker <span id="trackerCount" style="font-size:11px;background:var(--bg-secondary);padding:1px 6px;border-radius:999px;margin-left:4px;color:var(--text-secondary)">0</span></button>
+  </div>
+
+  <!-- SEARCH VIEW -->
+  <div class="view active" id="view-search">
+    <div class="profile-bar">
+      <span class="badge"><i class="ti ti-microscope" style="font-size:13px;vertical-align:-1px;margin-right:4px" aria-hidden="true"></i>Postdoc / Research Fellow</span>
+      <span class="badge"><i class="ti ti-atom" style="font-size:13px;vertical-align:-1px;margin-right:4px" aria-hidden="true"></i>Natural Sciences</span>
+      <span class="badge"><i class="ti ti-world" style="font-size:13px;vertical-align:-1px;margin-right:4px" aria-hidden="true"></i>Germany · EU eligible</span>
+    </div>
+    <div class="search-row">
+      <input type="text" id="topicInput" placeholder="e.g. climate biology, quantum chemistry, neuroscience…" onkeydown="if(event.key==='Enter') runSearch()" />
+      <button onclick="runSearch()" id="searchBtn">Search →</button>
+    </div>
+    <div class="filters">
+      <button class="filter-btn active" onclick="setFilter(this,'all')">All</button>
+      <button class="filter-btn" onclick="setFilter(this,'fellowship')">Fellowships</button>
+      <button class="filter-btn" onclick="setFilter(this,'project')">Project grants</button>
+      <button class="filter-btn" onclick="setFilter(this,'mobility')">Mobility</button>
+      <button class="filter-btn" onclick="setFilter(this,'eu')">EU / ERC</button>
+    </div>
+    <div class="status-line" id="searchStatus">Enter a research topic, or search broadly to discover all relevant schemes.</div>
+    <div class="results" id="results"></div>
+  </div>
+
+  <!-- TRACKER VIEW -->
+  <div class="view" id="view-tracker">
+    <div class="stats-row" id="statsRow"></div>
+    <div class="tracker-toolbar">
+      <h3>Saved opportunities</h3>
+      <button class="export-btn" onclick="exportMarkdown()">
+        <i class="ti ti-brand-notion" style="font-size:15px" aria-hidden="true"></i> Export to Notion markdown
+      </button>
+    </div>
+    <div id="trackerContent"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let apiKey = '';
+  let searchResults = [];
+  let savedGrants = {};
+  let activeFilter = 'all';
+
+  // ── Storage (localStorage) ──────────────────────────────────────────────
+  function loadData() {
+    try {
+      apiKey = localStorage.getItem('funding_api_key') || '';
+      const raw = localStorage.getItem('funding_grants');
+      savedGrants = raw ? JSON.parse(raw) : {};
+    } catch(e) { savedGrants = {}; }
+  }
+
+  function persistGrants() {
+    try { localStorage.setItem('funding_grants', JSON.stringify(savedGrants)); } catch(e) {}
+  }
+
+  // ── Key management ──────────────────────────────────────────────────────
+  function saveKey() {
+    const val = document.getElementById('apiKeyInput').value.trim();
+    if (!val.startsWith('sk-ant-')) {
+      document.getElementById('setupError').style.display = 'block';
+      return;
+    }
+    apiKey = val;
+    localStorage.setItem('funding_api_key', apiKey);
+    document.getElementById('setup').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    updateTrackerCount();
+  }
+
+  function resetKey() {
+    localStorage.removeItem('funding_api_key');
+    apiKey = '';
+    document.getElementById('apiKeyInput').value = '';
+    document.getElementById('setup').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+  }
+
+  // ── UI helpers ──────────────────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  function updateTrackerCount() {
+    document.getElementById('trackerCount').textContent = Object.keys(savedGrants).length;
+  }
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+    document.getElementById(`view-${tab}`).classList.add('active');
+    if (tab === 'tracker') renderTracker();
+  }
+
+  function setFilter(el, f) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    activeFilter = f;
+    renderResults();
+  }
+
+  // ── Search ──────────────────────────────────────────────────────────────
+  async function runSearch() {
+    const topic = document.getElementById('topicInput').value.trim();
+    const btn = document.getElementById('searchBtn');
+    const status = document.getElementById('searchStatus');
+
+    btn.disabled = true;
+    btn.textContent = 'Searching…';
+    searchResults = [];
+    document.getElementById('results').innerHTML =
+      `<div class="status-line"><div class="loading-dots"><span></span><span></span><span></span></div> Searching the web for funding opportunities…</div>`;
+    status.innerHTML = '';
+
+    const systemPrompt = `You are an expert research funding advisor. The user is a postdoctoral researcher in the natural sciences (biology, chemistry, physics, or related), based in Germany. They want both personal fellowships/mobility grants AND research project grants.
+
+Search the web and return a JSON array of 7–10 real, current funding opportunities. Each object must have exactly these fields:
+- id: string (slug, e.g. "dfg-walter-benjamin")
+- name: string
+- funder: string
+- type: "fellowship" | "project" | "both"
+- tags: array from ["fellowship","project","mobility","eu","dfg","international","early-career"]
+- amount: string
+- deadline: string (next deadline, "rolling", or "check website")
+- eligibility: string (key requirement, e.g. "within 5 yrs of PhD")
+- description: string (2–3 sentences)
+- url: string
+
+Focus on DFG, ERC, Marie Skłodowska-Curie, Humboldt Foundation, EMBO, DAAD, Volkswagen Foundation, and topic-relevant funders. Prioritise open or upcoming calls. Return ONLY a valid JSON array, no markdown fences, no preamble.`;
+
+    const userMsg = topic
+      ? `Find current funding for a natural sciences postdoc in Germany, focused on: ${topic}.`
+      : `Find the best current funding opportunities for a postdoc in natural sciences based in Germany. Include DFG, ERC, Marie Curie, Humboldt, EMBO, DAAD and other relevant schemes.`;
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 4000,
+          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userMsg }]
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error?.message || 'API error');
+      }
+
+      const data = await response.json();
+      const text = data.content.filter(b => b.type === 'text').map(b => b.text).join('');
+      const clean = text.replace(/```json|```/g, '').trim();
+      const start = clean.indexOf('['), end = clean.lastIndexOf(']');
+      if (start === -1 || end === -1) throw new Error('No JSON array in response');
+      searchResults = JSON.parse(clean.slice(start, end + 1));
+      status.textContent = `Found ${searchResults.length} opportunities. Click "+ Save" to add any to your tracker.`;
+      renderResults();
+    } catch(err) {
+      status.textContent = `Error: ${err.message}. Check your API key and try again.`;
+      document.getElementById('results').innerHTML = '';
+      console.error(err);
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Search →';
+  }
+
+  function renderResults() {
+    const container = document.getElementById('results');
+    let grants = searchResults;
+    if (activeFilter !== 'all') grants = grants.filter(g => g.tags && g.tags.includes(activeFilter));
+    if (!grants.length && searchResults.length) {
+      container.innerHTML = '<div style="text-align:center;padding:2rem;font-size:14px;color:var(--text-secondary)">No results match this filter.</div>';
+      return;
+    }
+    if (!grants.length) { container.innerHTML = ''; return; }
+
+    container.innerHTML = grants.map(g => {
+      const saved = !!savedGrants[g.id];
+      const typeClass = g.type === 'fellowship' ? 'type-fellowship' : g.type === 'project' ? 'type-project' : 'type-both';
+      const typeLabel = g.type === 'fellowship' ? 'Fellowship' : g.type === 'project' ? 'Project grant' : 'Grant / Fellowship';
+      return `<div class="grant-card">
+        <div class="card-top">
+          <p class="grant-name">${g.url ? `<a href="${g.url}" target="_blank">${g.name}</a>` : g.name}</p>
+          <div class="card-badges">
+            <span class="type-badge ${typeClass}">${typeLabel}</span>
+            <button class="save-btn ${saved ? 'saved' : ''}" onclick="toggleSave('${g.id}')">
+              ${saved ? '✓ Saved' : '+ Save'}
+            </button>
+          </div>
+        </div>
+        <div class="grant-meta">
+          ${g.funder ? `<span><i class="ti ti-building" aria-hidden="true"></i>${g.funder}</span>` : ''}
+          ${g.amount ? `<span><i class="ti ti-currency-euro" aria-hidden="true"></i>${g.amount}</span>` : ''}
+          ${g.deadline ? `<span><i class="ti ti-calendar" aria-hidden="true"></i>Deadline: ${g.deadline}</span>` : ''}
+          ${g.eligibility ? `<span><i class="ti ti-user-check" aria-hidden="true"></i>${g.eligibility}</span>` : ''}
+        </div>
+        <p class="grant-desc">${g.description}</p>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Save / remove ───────────────────────────────────────────────────────
+  function toggleSave(id) {
+    const g = searchResults.find(x => x.id === id);
+    if (!g) return;
+    if (savedGrants[id]) {
+      delete savedGrants[id];
+      showToast('Removed from tracker');
+    } else {
+      savedGrants[id] = { ...g, status: 'to apply', notes: '', savedAt: new Date().toISOString() };
+      showToast('Saved to tracker ✓');
+    }
+    persistGrants();
+    updateTrackerCount();
+    renderResults();
+  }
+
+  function removeGrant(id) {
+    delete savedGrants[id];
+    persistGrants();
+    updateTrackerCount();
+    renderTracker();
+    showToast('Removed from tracker');
+  }
+
+  function updateStatus(id, status) {
+    if (!savedGrants[id]) return;
+    savedGrants[id].status = status;
+    persistGrants();
+    showToast('Status updated');
+  }
+
+  function updateNotes(id, notes) {
+    if (!savedGrants[id]) return;
+    savedGrants[id].notes = notes;
+    persistGrants();
+  }
+
+  // ── Tracker ─────────────────────────────────────────────────────────────
+  function renderTracker() {
+    const grants = Object.values(savedGrants);
+    const counts = { 'to apply': 0, applied: 0, submitted: 0, awarded: 0, rejected: 0 };
+    grants.forEach(g => { if (counts[g.status] !== undefined) counts[g.status]++; });
+
+    document.getElementById('statsRow').innerHTML = `
+      <div class="stat-card"><div class="stat-label">Saved</div><div class="stat-value">${grants.length}</div></div>
+      <div class="stat-card"><div class="stat-label">To apply</div><div class="stat-value">${counts['to apply']}</div></div>
+      <div class="stat-card"><div class="stat-label">In progress</div><div class="stat-value">${counts.applied + counts.submitted}</div></div>
+      <div class="stat-card"><div class="stat-label">Awarded</div><div class="stat-value">${counts.awarded}</div></div>`;
+
+    const container = document.getElementById('trackerContent');
+    if (!grants.length) {
+      container.innerHTML = `<div class="tracker-empty"><i class="ti ti-bookmark" aria-hidden="true"></i>No saved grants yet.<br>Search for funding and click <strong>+ Save</strong> on any result.</div>`;
+      return;
+    }
+
+    const statuses = ['to apply','applied','submitted','awarded','rejected'];
+    const sorted = [...grants].sort((a,b) => statuses.indexOf(a.status) - statuses.indexOf(b.status));
+
+    container.innerHTML = sorted.map(g => {
+      const typeClass = g.type === 'fellowship' ? 'type-fellowship' : g.type === 'project' ? 'type-project' : 'type-both';
+      const typeLabel = g.type === 'fellowship' ? 'Fellowship' : g.type === 'project' ? 'Project grant' : 'Grant / Fellowship';
+      return `<div class="tracker-card">
+        <div class="tracker-card-top">
+          <p class="tracker-name">${g.url ? `<a href="${g.url}" target="_blank">${g.name}</a>` : g.name}
+            <span class="type-badge ${typeClass}" style="font-size:10px;padding:2px 6px;margin-left:6px">${typeLabel}</span>
+          </p>
+          <div class="tracker-actions">
+            <select class="status-select" onchange="updateStatus('${g.id}', this.value)">
+              ${statuses.map(s => `<option value="${s}" ${g.status===s?'selected':''}>${s.charAt(0).toUpperCase()+s.slice(1).replace('-',' ')}</option>`).join('')}
+            </select>
+            <button class="remove-btn" onclick="removeGrant('${g.id}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
+          </div>
+        </div>
+        <div class="tracker-meta">
+          ${g.funder ? `<span><i class="ti ti-building" aria-hidden="true" style="font-size:12px"></i>${g.funder}</span>` : ''}
+          ${g.amount ? `<span><i class="ti ti-currency-euro" aria-hidden="true" style="font-size:12px"></i>${g.amount}</span>` : ''}
+          ${g.deadline ? `<span><i class="ti ti-calendar" aria-hidden="true" style="font-size:12px"></i>${g.deadline}</span>` : ''}
+          ${g.eligibility ? `<span><i class="ti ti-user-check" aria-hidden="true" style="font-size:12px"></i>${g.eligibility}</span>` : ''}
+        </div>
+        <textarea class="notes-input" rows="2" placeholder="Add notes, requirements, contacts…"
+          onchange="updateNotes('${g.id}', this.value)">${g.notes || ''}</textarea>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Markdown export ─────────────────────────────────────────────────────
+  function exportMarkdown() {
+    const grants = Object.values(savedGrants);
+    if (!grants.length) { showToast('Nothing saved yet — save some grants first!'); return; }
+
+    const now = new Date().toLocaleDateString('en-GB', { year:'numeric', month:'long', day:'numeric' });
+    const statusGroups = { 'to apply': [], applied: [], submitted: [], awarded: [], rejected: [] };
+    grants.forEach(g => (statusGroups[g.status] || statusGroups['to apply']).push(g));
+
+    const statusEmoji = { 'to apply':'📋', applied:'📤', submitted:'⏳', awarded:'🏆', rejected:'❌' };
+    const statusLabel = { 'to apply':'To apply', applied:'Applied', submitted:'Submitted / Under review', awarded:'Awarded', rejected:'Rejected' };
+
+    let md = `# Academic Funding Tracker\n\n`;
+    md += `> **Profile:** Postdoc · Natural Sciences · Germany / EU\n`;
+    md += `> **Last updated:** ${now}\n\n---\n\n`;
+    md += `## Summary\n\n| Status | Count |\n|--------|-------|\n`;
+    Object.entries(statusGroups).forEach(([s, arr]) => {
+      if (arr.length) md += `| ${statusEmoji[s]} ${statusLabel[s]} | ${arr.length} |\n`;
+    });
+    md += `\n---\n\n`;
+
+    Object.entries(statusGroups).forEach(([status, arr]) => {
+      if (!arr.length) return;
+      md += `## ${statusEmoji[status]} ${statusLabel[status]}\n\n`;
+      arr.forEach(g => {
+        md += `### ${g.name}\n\n`;
+        md += `| Field | Details |\n|-------|--------|\n`;
+        md += `| **Funder** | ${g.funder || '—'} |\n`;
+        md += `| **Type** | ${g.type === 'fellowship' ? 'Fellowship' : g.type === 'project' ? 'Project grant' : 'Grant / Fellowship'} |\n`;
+        md += `| **Amount** | ${g.amount || '—'} |\n`;
+        md += `| **Deadline** | ${g.deadline || '—'} |\n`;
+        md += `| **Eligibility** | ${g.eligibility || '—'} |\n`;
+        if (g.url) md += `| **Website** | [${g.url}](${g.url}) |\n`;
+        md += `\n**About:** ${g.description}\n\n`;
+        if (g.notes) md += `**Notes:** ${g.notes}\n\n`;
+        md += `---\n\n`;
+      });
+    });
+
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `funding-tracker-${new Date().toISOString().slice(0,10)}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Markdown file downloaded ✓');
+  }
+
+  // ── Init ────────────────────────────────────────────────────────────────
+  loadData();
+  if (apiKey) {
+    document.getElementById('setup').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    updateTrackerCount();
+  }
+</script>
+</body>
+</html>
